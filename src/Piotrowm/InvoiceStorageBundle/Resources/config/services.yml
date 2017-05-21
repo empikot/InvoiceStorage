@@ -1,0 +1,4 @@
+services:
+#    piotrowm_invoice_storage.example:
+#        class: Piotrowm\InvoiceStorageBundle\Example
+#        arguments: ["@service_id", "plain_value", "%parameter%"]

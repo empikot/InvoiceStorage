@@ -1,0 +1,5 @@
+piotrowm_invoice_storage:
+    resource: "@PiotrowmInvoiceStorageBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
