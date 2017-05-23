@@ -11,6 +11,16 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 
 class SmokeTestController extends Controller
 {
+
+    /**
+     * @Route("/saveInvoice")
+     */
+    public function saveInvoiceAction()
+    {
+        $inputData = json_decode(file_get_contents("php://input"), true);
+        return $this->makeAndSaveInvoice($inputData);
+    }
+
     /**
      * @Route("/smokeTest")
      */
@@ -44,6 +54,11 @@ class SmokeTestController extends Controller
                 ),
             ),
         );
+        return $this->makeAndSaveInvoice($inputData);
+    }
+
+    private function makeAndSaveInvoice($inputData)
+    {
         try {
             $builder = new InvoiceBuilder(
                 $this->container->get('piotrowm_invoice_storage.netPriceCalculator'),
@@ -52,13 +67,13 @@ class SmokeTestController extends Controller
             );
             $invoiceObj = $builder->setOrderData($inputData)->build()->getInvoice();
         } catch (OrderDataIsIncomplete $ex) {
-            die('[ERROR] order data is probably not valid: '.$ex->getMessage());
+            die('[ERROR] order data is probably not valid: ' . $ex->getMessage());
         }
         try {
             $storage = new InvoiceStorage($this->getDoctrine()->getManager(), $invoiceObj);
             $storage->store();
         } catch (UniqueConstraintViolationException $ex) {
-            die('[ERROR] invoice already exists for given order data: '.$ex->getMessage());
+            die('[ERROR] invoice already exists for given order data: ' . $ex->getMessage());
         }
         return $this->render('PiotrowmInvoiceStorageBundle:Default:index.html.twig');
     }
