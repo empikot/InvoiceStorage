@@ -3,22 +3,14 @@
 namespace Piotrowm\InvoiceStorageBundle\Controller;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Piotrowm\InvoiceStorageBundle\Exception\OrderDataIsIncomplete;
 use Piotrowm\InvoiceStorageBundle\Service\InvoiceBuilder;
 use Piotrowm\InvoiceStorageBundle\Service\InvoiceStorage;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\Debug\Exception\ContextErrorException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 
-class DefaultController extends Controller
+class SmokeTestController extends Controller
 {
-    /**
-     * @Route("/")
-     */
-    public function indexAction()
-    {
-        return $this->render('PiotrowmInvoiceStorageBundle:Default:index.html.twig');
-    }
-
     /**
      * @Route("/smokeTest")
      */
@@ -54,10 +46,12 @@ class DefaultController extends Controller
         );
         try {
             $builder = new InvoiceBuilder(
-                $this->container, $this->getDoctrine()->getManager()
+                $this->container->get('piotrowm_invoice_storage.netPriceCalculator'),
+                $this->container->get('piotrowm_invoice_storage.customerDataLoader'),
+                $this->container->get('piotrowm_invoice_storage.shipmentLoader')
             );
             $invoiceObj = $builder->setOrderData($inputData)->build()->getInvoice();
-        } catch (ContextErrorException $ex) {
+        } catch (OrderDataIsIncomplete $ex) {
             die('[ERROR] order data is probably not valid: '.$ex->getMessage());
         }
         try {
@@ -66,6 +60,6 @@ class DefaultController extends Controller
         } catch (UniqueConstraintViolationException $ex) {
             die('[ERROR] invoice already exists for given order data: '.$ex->getMessage());
         }
-        die('OK');
+        return $this->render('PiotrowmInvoiceStorageBundle:Default:index.html.twig');
     }
 }

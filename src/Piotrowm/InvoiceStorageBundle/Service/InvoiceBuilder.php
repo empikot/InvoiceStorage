@@ -2,7 +2,7 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Service;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Piotrowm\InvoiceStorageBundle\Exception\OrderDataIsIncomplete;
 use Piotrowm\InvoiceStorageBundle\Model\InvoiceHeader;
 use Symfony\Component\DependencyInjection\Container;
 
@@ -23,10 +23,6 @@ class InvoiceBuilder implements Builder
      */
     private $shipmentLoader;
     /**
-     * @var ObjectManager
-     */
-    private $entityManager;
-    /**
      * @var array
      */
     private $orderData;
@@ -39,12 +35,11 @@ class InvoiceBuilder implements Builder
      */
     private $invoiceLines;
 
-    public function __construct(Container $serviceContainer, ObjectManager $entityManager)
+    public function __construct(NetPriceCalculator $netPriceCalculator, CustomerDataLoader $customerDataLoader, ShipmentLoader $shipmentLoader)
     {
-        $this->netPriceCalculator = $serviceContainer->get('piotrowm_invoice_storage.netPriceCalculator');
-        $this->customerDataLoader = $serviceContainer->get('piotrowm_invoice_storage.customerDataLoader');
-        $this->shipmentLoader = $serviceContainer->get('piotrowm_invoice_storage.shipmentLoader');
-        $this->entityManager = $entityManager;
+        $this->netPriceCalculator = $netPriceCalculator;
+        $this->customerDataLoader = $customerDataLoader;
+        $this->shipmentLoader = $shipmentLoader;
         $this->invoiceLines = array();
     }
 
@@ -67,12 +62,13 @@ class InvoiceBuilder implements Builder
 
     private function buildInvoiceHeader()
     {
-        $headerBuilder = new InvoiceHeaderBuilder($this->netPriceCalculator, $this->customerDataLoader, $this->entityManager);
+        $headerBuilder = new InvoiceHeaderBuilder($this->netPriceCalculator, $this->customerDataLoader);
         $this->invoiceHeader = $headerBuilder->setOrderData($this->orderData)->build()->getInvoiceHeader();
     }
 
     private function createOrderLineForShipment()
     {
+        $this->validateOrderShipmentData();
         $this->addShipmentGrossPriceToGrossPriceSum($this->orderData['shipment_price']);
         $shipmentProductId = $this->shipmentLoader->getShipmentIdBySymbol($this->orderData['shipment_type']);
         $this->orderData['lines'][] = array(
@@ -85,6 +81,13 @@ class InvoiceBuilder implements Builder
         );
     }
 
+    private function validateOrderShipmentData()
+    {
+        if (!isset($this->orderData['shipment_price']) || !isset($this->orderData['shipment_type'])) {
+            throw new OrderDataIsIncomplete("shipment data is not valid: ".json_encode($this->orderData));
+        }
+    }
+
     private function addShipmentGrossPriceToGrossPriceSum($grossShipmentPrice)
     {
         $grossPriceSum = $this->invoiceHeader->getGrossPriceSum();
@@ -95,7 +98,7 @@ class InvoiceBuilder implements Builder
     {
         $lineBuilder = new InvoiceLineBuilder($this->netPriceCalculator);
         foreach ($this->orderData['lines'] as $orderLine) {
-            $this->invoiceLines[] = $lineBuilder->setOrderLineData($orderLine)->build()->getInvoicLine();
+            $this->invoiceLines[] = $lineBuilder->setOrderLineData($orderLine)->build()->getInvoiceLine();
         }
     }
 

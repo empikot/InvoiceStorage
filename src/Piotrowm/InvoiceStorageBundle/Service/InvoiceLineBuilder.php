@@ -2,6 +2,7 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Service;
 
+use Piotrowm\InvoiceStorageBundle\Exception\OrderDataIsIncomplete;
 use Piotrowm\InvoiceStorageBundle\Model\InvoiceLine;
 
 class InvoiceLineBuilder implements Builder
@@ -33,6 +34,8 @@ class InvoiceLineBuilder implements Builder
 
     public function build() : self
     {
+        $this->validateOrderLineData();
+
         $this->invoiceLine = new InvoiceLine();
         $this->invoiceLine->setProductId($this->orderLineData['product_id'])
             ->setQuantity($this->orderLineData['quantity'])
@@ -45,7 +48,17 @@ class InvoiceLineBuilder implements Builder
         return $this;
     }
 
-    public function getInvoicLine() : InvoiceLine
+    private function validateOrderLineData()
+    {
+        if (!isset($this->orderLineData['product_id'])
+            || !isset($this->orderLineData['quantity'])
+            || !isset($this->orderLineData['gross_price'])
+            || !isset($this->orderLineData['tax_percent'])) {
+            throw new OrderDataIsIncomplete("invalid order line data: ".json_encode($this->orderLineData));
+        }
+    }
+
+    public function getInvoiceLine() : InvoiceLine
     {
         return $this->invoiceLine;
     }

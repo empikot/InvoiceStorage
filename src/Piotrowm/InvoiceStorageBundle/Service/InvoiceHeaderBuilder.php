@@ -2,11 +2,13 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Service;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Piotrowm\InvoiceStorageBundle\Exception\OrderDataIsIncomplete;
 use Piotrowm\InvoiceStorageBundle\Model\InvoiceHeader;
 
 class InvoiceHeaderBuilder implements Builder
 {
+    const INVOICE_NUMBER_PREFIX = "FAV";
+
     /**
      * @var array
      */
@@ -23,17 +25,11 @@ class InvoiceHeaderBuilder implements Builder
      * @var CustomerDataLoader
      */
     private $customerDataLoader;
-    /**
-     * @var ObjectManager
-     */
-    private $entityManager;
-
-    public function __construct(NetPriceCalculator $netPriceCalculator, CustomerDataLoader $customerDataLoader, ObjectManager $entityManager)
+    public function __construct(NetPriceCalculator $netPriceCalculator, CustomerDataLoader $customerDataLoader)
     {
 
         $this->netPriceCalculator = $netPriceCalculator;
         $this->customerDataLoader = $customerDataLoader;
-        $this->entityManager = $entityManager;
     }
 
     public function setOrderData(array $orderData) : self
@@ -44,11 +40,13 @@ class InvoiceHeaderBuilder implements Builder
 
     public function build() : self
     {
+        $this->validateOrderHeaderData();
+
         $customerAddress = $this->customerDataLoader->findAddressById($this->orderData['customer_address_id']);
         $customerInvoiceData = $this->customerDataLoader->findInvoiceDataById($this->orderData['customer_invoice_data_id']);
         $this->invoiceHeader = new InvoiceHeader();
         $this->invoiceHeader->setOrderId($this->orderData['id'])
-            ->setInvoiceNumber('F/1/2017')
+            ->setInvoiceNumber($this->generateInvoiceNumber($this->orderData['id']))
             ->setPaymentType($this->orderData['payment_type'])
             ->setGrossPriceSum($this->orderData['items_price'])
             ->setCustomerName($customerInvoiceData->getName() ? $customerInvoiceData->getName() : $customerAddress->getName())
@@ -57,6 +55,22 @@ class InvoiceHeaderBuilder implements Builder
             ->setCustomerCity($customerAddress->getCity())
             ->setCustomerTaxIdentifier($customerInvoiceData->getTaxIdentifier());
         return $this;
+    }
+
+    private function validateOrderHeaderData()
+    {
+        if (!isset($this->orderData['customer_address_id'])
+            || !isset($this->orderData['customer_invoice_data_id'])
+            || !isset($this->orderData['id'])
+            || !isset($this->orderData['payment_type'])
+            || !isset($this->orderData['items_price'])) {
+            throw new OrderDataIsIncomplete("invalid order header data: ".json_encode($this->orderData));
+        }
+    }
+
+    private function generateInvoiceNumber($orderId)
+    {
+        return self::INVOICE_NUMBER_PREFIX." ".$orderId;
     }
 
     public function getInvoiceHeader() : InvoiceHeader
