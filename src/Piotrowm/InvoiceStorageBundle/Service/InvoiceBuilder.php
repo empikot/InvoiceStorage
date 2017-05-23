@@ -4,7 +4,6 @@ namespace Piotrowm\InvoiceStorageBundle\Service;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Piotrowm\InvoiceStorageBundle\Model\InvoiceHeader;
-use Symfony\Component\Debug\Exception\ContextErrorException;
 use Symfony\Component\DependencyInjection\Container;
 
 class InvoiceBuilder implements Builder
@@ -37,14 +36,9 @@ class InvoiceBuilder implements Builder
      */
     public function build() : self
     {
-        try {
-            $this->buildInvoiceHeader();
-            $this->createOrderLineForShipment();
-            $this->buildInvoiceLines();
-        } catch (ContextErrorException $ex) {
-            die($ex->getMessage());
-            //throw $ex;
-        }
+        $this->buildInvoiceHeader();
+        $this->createOrderLineForShipment();
+        $this->buildInvoiceLines();
         return $this;
     }
 
@@ -56,6 +50,7 @@ class InvoiceBuilder implements Builder
 
     private function createOrderLineForShipment()
     {
+        $this->addShipmentGrossPriceToGrossPriceSum($this->orderData['shipment_price']);
         $shipmentProductId = $this->shipmentLoader->getShipmentIdBySymbol($this->orderData['shipment_type']);
         $this->orderData['lines'][] = array(
             'id' => null,
@@ -65,6 +60,12 @@ class InvoiceBuilder implements Builder
             'gross_price' => $this->orderData['shipment_price'],
             'tax_percent' => 23
         );
+    }
+
+    private function addShipmentGrossPriceToGrossPriceSum($grossShipmentPrice)
+    {
+        $grossPriceSum = $this->invoiceHeader->getGrossPriceSum();
+        $this->invoiceHeader->setGrossPriceSum($grossPriceSum + $grossShipmentPrice);
     }
 
     private function buildInvoiceLines()

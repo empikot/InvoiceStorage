@@ -2,10 +2,11 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Controller;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Piotrowm\InvoiceStorageBundle\Service\InvoiceBuilder;
 use Piotrowm\InvoiceStorageBundle\Service\InvoiceStorage;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\Debug\Exception\ContextErrorException;
 
 class DefaultController extends Controller
 {
@@ -14,18 +15,14 @@ class DefaultController extends Controller
      */
     public function indexAction()
     {
-        /**
-         *
-         *
-         * `id, status, customer_address_id, customer_invoice_data_id, shipment_type, shipment_price, payment_type, items_price`
-         *Zamówione produkty (1 linia per produkt):*
-        `id, order_id, product_id, gross_price, tax_percent`
-         *
-         *
-         */
+        return $this->render('PiotrowmInvoiceStorageBundle:Default:index.html.twig');
+    }
 
-
-
+    /**
+     * @Route("/smokeTest")
+     */
+    public function smokeTestAction()
+    {
         $inputData = array(
             'id' => 1,
             'status' => 'zrealizowane',
@@ -54,16 +51,20 @@ class DefaultController extends Controller
                 ),
             ),
         );
-        //var_dump($this->container->get('piotrowm_invoice_storage.customerDataLoader')); die('aaa');
-        $builder = new InvoiceBuilder(
-            $this->container, $this->getDoctrine()->getManager()
-        );
-        $invoiceObj = $builder->setOrderData($inputData)
-            ->build()
-            ->getInvoice();
-        var_dump($invoiceObj); die('<br><br>fin.');
-        $storage = new InvoiceStorage($this->getDoctrine()->getManager(), $invoiceObj);
-        $storage->store();
-        return $this->render('PiotrowmInvoiceStorageBundle:Default:index.html.twig');
+        try {
+            $builder = new InvoiceBuilder(
+                $this->container, $this->getDoctrine()->getManager()
+            );
+            $invoiceObj = $builder->setOrderData($inputData)->build()->getInvoice();
+        } catch (ContextErrorException $ex) {
+            die('[ERROR] order data is probably not valid: '.$ex->getMessage());
+        }
+        try {
+            $storage = new InvoiceStorage($this->getDoctrine()->getManager(), $invoiceObj);
+            $storage->store();
+        } catch (UniqueConstraintViolationException $ex) {
+            die('[ERROR] invoice already exists for given order data: '.$ex->getMessage());
+        }
+        die('OK');
     }
 }

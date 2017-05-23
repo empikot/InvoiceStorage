@@ -47,7 +47,7 @@ class InvoiceHeaderBuilder implements Builder
         $customerAddress = $this->customerDataLoader->findAddressById($this->orderData['customer_address_id']);
         $customerInvoiceData = $this->customerDataLoader->findInvoiceDataById($this->orderData['customer_invoice_data_id']);
         $this->invoiceHeader = new InvoiceHeader();
-        $this->invoiceHeader->setOrderId($this->orderData['id2'])
+        $this->invoiceHeader->setOrderId($this->orderData['id'])
             ->setInvoiceNumber('F/1/2017')
             ->setPaymentType($this->orderData['payment_type'])
             ->setGrossPriceSum($this->orderData['items_price'])
