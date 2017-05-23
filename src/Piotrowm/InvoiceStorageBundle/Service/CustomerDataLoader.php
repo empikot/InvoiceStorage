@@ -2,6 +2,8 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Service;
 
+use Piotrowm\InvoiceStorageBundle\Exception\CustomerAddressDoesntExist;
+use Piotrowm\InvoiceStorageBundle\Exception\CustomerInvoiceDataDoesntExist;
 use Piotrowm\InvoiceStorageBundle\Model\CustomerAddress;
 use Piotrowm\InvoiceStorageBundle\Model\CustomerInvoiceData;
 
@@ -31,6 +33,7 @@ class CustomerDataLoader
      * returns customer address by id
      * @param int $id
      * @return CustomerAddress
+     * @throws CustomerAddressDoesntExist
      */
     public function findAddressById(int $id) : CustomerAddress
     {
@@ -38,12 +41,14 @@ class CustomerDataLoader
             $addressData = $this->address[$id];
             return new CustomerAddress($id, $addressData['name'], $addressData['street'], $addressData['zipCode'], $addressData['city']);
         }
+        throw new CustomerAddressDoesntExist("send customer address id ".$id);
     }
 
     /**
      * return customer invoice data by id
      * @param int $id
      * @return CustomerInvoiceData
+     * @throws CustomerInvoiceDataDoesntExist
      */
     public function findInvoiceDataById(int $id)
     {
@@ -51,6 +56,7 @@ class CustomerDataLoader
             $invoiceData = $this->invoiceData[$id];
             return new CustomerInvoiceData($id, $invoiceData['name'], $invoiceData['taxIdentifier']);
         }
+        throw new CustomerInvoiceDataDoesntExist("send invoice data id ".$id);
     }
 
 }

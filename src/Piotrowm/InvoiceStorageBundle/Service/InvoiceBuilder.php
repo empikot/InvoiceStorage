@@ -8,12 +8,35 @@ use Symfony\Component\DependencyInjection\Container;
 
 class InvoiceBuilder implements Builder
 {
+    const SHIPMENT_TAX_PERCENT = 23;
+
+    /**
+     * @var NetPriceCalculator
+     */
     private $netPriceCalculator;
+    /**
+     * @var CustomerDataLoader
+     */
     private $customerDataLoader;
+    /**
+     * @var ShipmentLoader
+     */
     private $shipmentLoader;
+    /**
+     * @var ObjectManager
+     */
     private $entityManager;
+    /**
+     * @var array
+     */
     private $orderData;
+    /**
+     * @var InvoiceHeader
+     */
     private $invoiceHeader;
+    /**
+     * @var array
+     */
     private $invoiceLines;
 
     public function __construct(Container $serviceContainer, ObjectManager $entityManager)
@@ -58,7 +81,7 @@ class InvoiceBuilder implements Builder
             'product_id' => $shipmentProductId,
             'quantity' => 1,
             'gross_price' => $this->orderData['shipment_price'],
-            'tax_percent' => 23
+            'tax_percent' => self::SHIPMENT_TAX_PERCENT
         );
     }
 

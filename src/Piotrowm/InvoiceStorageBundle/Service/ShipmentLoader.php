@@ -2,6 +2,8 @@
 
 namespace Piotrowm\InvoiceStorageBundle\Service;
 
+use Piotrowm\InvoiceStorageBundle\Exception\ShipmentDoesntExist;
+
 class ShipmentLoader
 {
     /**
@@ -18,11 +20,13 @@ class ShipmentLoader
      * returns product id for given shipment method symbol
      * @param string $symbol
      * @return int
+     * @throws ShipmentDoesntExist
      */
     public function getShipmentIdBySymbol(string $symbol) : int
     {
         if (isset($this->shipments[$symbol])) {
             return $this->shipments[$symbol];
         }
+        throw new ShipmentDoesntExist("input symbol ".$symbol);
     }
 }

@@ -139,20 +139,6 @@ class InvoiceHeader
     }
 
     /**
-     * Set netPriceSum
-     *
-     * @param string $netPriceSum
-     *
-     * @return InvoiceHeader
-     *
-    public function setNetPriceSum($netPriceSum)
-    {
-        $this->netPriceSum = $netPriceSum;
-
-        return $this;
-    }*/
-
-    /**
      * Get netPriceSum
      *
      * @return string
@@ -352,8 +338,10 @@ class InvoiceHeader
      */
     public function removeInvoiceLine(\Piotrowm\InvoiceStorageBundle\Model\InvoiceLine $invoiceLine)
     {
-        $this->invoiceLines->removeElement($invoiceLine);
-        $this->netPriceSum -= $invoiceLine->getNetPrice();
+        if ($this->invoiceLines->contains($invoiceLine)) {
+            $this->invoiceLines->removeElement($invoiceLine);
+            $this->netPriceSum -= $invoiceLine->getNetPrice();
+        }
     }
 
     /**
