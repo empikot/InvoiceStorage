@@ -1,4 +1,10 @@
 services:
-#    piotrowm_invoice_storage.example:
-#        class: Piotrowm\InvoiceStorageBundle\Example
-#        arguments: ["@service_id", "plain_value", "%parameter%"]
+    piotrowm_invoice_storage.netPriceCalculator:
+        class: Piotrowm\InvoiceStorageBundle\Service\NetPriceCalculator
+        arguments: []
+    piotrowm_invoice_storage.customerDataLoader:
+        class: Piotrowm\InvoiceStorageBundle\Service\CustomerDataLoader
+        arguments: []
+    piotrowm_invoice_storage.shipmentLoader:
+        class: Piotrowm\InvoiceStorageBundle\Service\ShipmentLoader
+        arguments: []
